@@ -1,4 +1,4 @@
-﻿// Functions.cs - 02/14/2017
+﻿// Functions.cs - 03/04/2017
 
 using System;
 using System.Text;
@@ -7,12 +7,11 @@ namespace Common.JSON
 {
     static internal class Functions
     {
-        internal static bool AddWhitespace = false;
         internal static int IndentSize = 2;
 
         internal static void SkipWhitespace(string input, ref int pos)
         {
-            while (pos < input.Length && Char.IsWhiteSpace(input[pos]))
+            while (pos < input.Length && char.IsWhiteSpace(input[pos]))
             {
                 pos++;
             }
@@ -197,7 +196,7 @@ namespace Common.JSON
             {
                 throw new System.Exception($"Unknown unicode char: \"{value}\"");
             }
-            result = Convert.ToChar(Convert.ToUInt16(value.Substring(2, 4))).ToString();
+            result = Convert.ToChar(Convert.ToUInt16(value.Substring(2, 4), 16)).ToString();
             return result;
         }
 

@@ -1,4 +1,4 @@
-﻿// JSONObject.cs - 02/08/2017
+﻿// JSONObject.cs - 03/05/2017
 
 using System;
 using System.Collections.Generic;
@@ -9,24 +9,118 @@ namespace Common.JSON
 {
     sealed public class JSONObject : Dictionary<string, object>
     {
-        private bool _addWhitespace;
-
         public JSONObject()
         {
-            _addWhitespace = Functions.AddWhitespace;
         }
 
-        public JSONObject(bool addWhitespace)
+        public JSONObject(string input)
         {
-            _addWhitespace = addWhitespace;
+            int pos = 0;
+            _FromString(this, input, ref pos);
+        }
+
+        public string getString(string key)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                throw new ArgumentNullException();
+            }
+            if (!ContainsKey(key))
+            {
+                return null;
+            }
+            return (string)this[key];
+        }
+
+        public bool getBool(string key)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                throw new ArgumentNullException();
+            }
+            if (!ContainsKey(key))
+            {
+                return false;
+            }
+            return (bool)this[key];
+        }
+
+        public int getInt(string key)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                throw new ArgumentNullException();
+            }
+            if (!ContainsKey(key))
+            {
+                return 0;
+            }
+            return (int)this[key];
+        }
+
+        public long getLong(string key)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                throw new ArgumentNullException();
+            }
+            if (!ContainsKey(key))
+            {
+                return 0;
+            }
+            return (long)this[key];
+        }
+
+        public decimal getDecimal(string key)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                throw new ArgumentNullException();
+            }
+            if (!ContainsKey(key))
+            {
+                return 0;
+            }
+            return (decimal)this[key];
+        }
+
+        public JSONObject getJSONObject(string key)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                throw new ArgumentNullException();
+            }
+            if (!ContainsKey(key))
+            {
+                return null;
+            }
+            return (JSONObject)this[key];
+        }
+
+        public JSONArray getJSONArray(string key)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                throw new ArgumentNullException();
+            }
+            if (!ContainsKey(key))
+            {
+                return null;
+            }
+            return (JSONArray)this[key];
         }
 
         public override string ToString()
         {
-            return ToString(0);
+            return ToString(0, false);
         }
 
-        public string ToString(int level)
+        public string ToString(bool addWhitespace)
+        {
+            return ToString(0, addWhitespace);
+        }
+
+        internal string ToString(int level, bool addWhitespace)
         {
             StringBuilder sb = new StringBuilder();
             sb.Append("{");
@@ -38,25 +132,25 @@ namespace Common.JSON
                 if (addComma)
                 {
                     sb.Append(",");
-                    if (_addWhitespace)
+                    if (addWhitespace)
                     {
                         sb.AppendLine();
-                        sb.Append(new String(' ', level * Functions.IndentSize));
+                        sb.Append(new string(' ', level * Functions.IndentSize));
                     }
                 }
                 else
                 {
-                    if (_addWhitespace)
+                    if (addWhitespace)
                     {
                         sb.AppendLine();
-                        sb.Append(new String(' ', level * Functions.IndentSize));
+                        sb.Append(new string(' ', level * Functions.IndentSize));
                     }
                     addComma = true;
                 }
                 sb.Append("\"");
                 sb.Append(Functions.ToJSONString(keyvalue.Key));
                 sb.Append("\":");
-                if (_addWhitespace)
+                if (addWhitespace)
                 {
                     sb.Append(" ");
                 }
@@ -76,11 +170,11 @@ namespace Common.JSON
                 }
                 else if (obj.GetType() == typeof(JSONObject))
                 {
-                    sb.Append(((JSONObject)obj).ToString(level));
+                    sb.Append(((JSONObject)obj).ToString(level, addWhitespace));
                 }
                 else if (obj.GetType() == typeof(JSONArray))
                 {
-                    sb.Append(((JSONArray)obj).ToString(level));
+                    sb.Append(((JSONArray)obj).ToString(level, addWhitespace));
                 }
                 else if (obj.GetType() == typeof(DateTime))
                 {
@@ -97,10 +191,10 @@ namespace Common.JSON
                 }
             }
             level--;
-            if (addComma && _addWhitespace)
+            if (addComma && addWhitespace)
             {
                 sb.AppendLine();
-                sb.Append(new String(' ', level * Functions.IndentSize));
+                sb.Append(new string(' ', level * Functions.IndentSize));
             }
             sb.Append("}");
             return sb.ToString();
@@ -108,17 +202,18 @@ namespace Common.JSON
 
         public static JSONObject FromString(string input)
         {
-            int pos = 0;
-            return FromString(input, ref pos);
-        }
-
-        public static JSONObject FromString(string input, ref int pos)
-        {
-            if (String.IsNullOrEmpty(input))
+            if (string.IsNullOrEmpty(input))
             {
                 return null;
             }
+            int pos = 0;
             JSONObject result = new JSONObject();
+            _FromString(result, input, ref pos);
+            return result;
+        }
+
+        internal static void _FromString(JSONObject result, string input, ref int pos)
+        {
             char c;
             Functions.SkipWhitespace(input, ref pos);
             if (pos >= input.Length || input[pos] != '{') // not a JSONObject
@@ -157,7 +252,7 @@ namespace Common.JSON
                         inStringValue = true;
                         readyForValue = false;
                         value.Append(Functions.GetStringValue(input, ref pos));
-                        SaveKeyValue(ref result, key.ToString(), value.ToString(), inStringValue);
+                        _SaveKeyValue(ref result, key.ToString(), value.ToString(), inStringValue);
                         Functions.SkipWhitespace(input, ref pos);
                         inValue = false;
                         inStringValue = false;
@@ -188,7 +283,7 @@ namespace Common.JSON
                     }
                     if (inValue)
                     {
-                        SaveKeyValue(ref result, key.ToString(), value.ToString(), inStringValue);
+                        _SaveKeyValue(ref result, key.ToString(), value.ToString(), inStringValue);
                     }
                     Functions.SkipWhitespace(input, ref pos);
                     inValue = false;
@@ -207,7 +302,7 @@ namespace Common.JSON
                     }
                     if (key.Length > 0) // ignore empty key
                     {
-                        SaveKeyValue(ref result, key.ToString(), value.ToString(), inStringValue);
+                        _SaveKeyValue(ref result, key.ToString(), value.ToString(), inStringValue);
                     }
                     break;
                 }
@@ -219,7 +314,9 @@ namespace Common.JSON
                         throw new SystemException();
                     }
                     pos--;
-                    SaveKeyObject(ref result, key.ToString(), JSONObject.FromString(input, ref pos));
+                    JSONObject jo = new JSONObject();
+                    _FromString(jo, input, ref pos);
+                    result.Add(key.ToString(), jo);
                     Functions.SkipWhitespace(input, ref pos);
                     readyForComma = true;
                     readyForValue = false;
@@ -234,8 +331,9 @@ namespace Common.JSON
                         throw new SystemException();
                     }
                     pos--;
-                    JSONArray ja = JSONArray.FromString(input, ref pos);
-                    SaveKeyObject(ref result, key.ToString(), ja);
+                    JSONArray ja = new JSONArray();
+                    JSONArray._FromString(ja, input, ref pos);
+                    result.Add(key.ToString(), ja);
                     Functions.SkipWhitespace(input, ref pos);
                     readyForComma = true;
                     readyForValue = false;
@@ -258,10 +356,9 @@ namespace Common.JSON
                 // incorrect syntax!
                 throw new SystemException();
             }
-            return result;
         }
 
-        private static void SaveKeyValue(ref JSONObject obj, string key, string value, bool inStringValue)
+        private static void _SaveKeyValue(ref JSONObject obj, string key, string value, bool inStringValue)
         {
             int intValue;
             long longValue;
@@ -304,11 +401,11 @@ namespace Common.JSON
             {
                 obj.Add(key, longValue);
             }
-            else if (Decimal.TryParse(value, out decimalValue))
+            else if (decimal.TryParse(value, out decimalValue))
             {
                 obj.Add(key, decimalValue);
             }
-            else if (Double.TryParse(value, out doubleValue))
+            else if (double.TryParse(value, out doubleValue))
             {
                 obj.Add(key, doubleValue);
             }
@@ -316,11 +413,6 @@ namespace Common.JSON
             {
                 throw new SystemException();
             }
-        }
-
-        private static void SaveKeyObject(ref JSONObject obj, string key, object value)
-        {
-            obj.Add(key, value); // value is JSONObject or JSONArray
         }
     }
 }
