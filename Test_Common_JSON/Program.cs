@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Common.JSON;
+﻿using Common.JSON;
+using System;
 
 namespace Test_Common_JSON
 {
@@ -11,7 +7,7 @@ namespace Test_Common_JSON
     {
         static void Main(string[] args)
         {
-            JSONObject jo = new JSONObject("{\r\n  \"key\": 123,\r\n  \"otherkey\": 789.12\r\n}");
+            JObject jo = JObject.Parse("{\r\n  \"key\": 123,\r\n  \"otherkey\": 789.12\r\n}");
             Console.WriteLine(jo.ToString());
             Console.Read();
         }

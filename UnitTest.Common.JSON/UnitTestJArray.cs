@@ -5,41 +5,41 @@ using Common.JSON;
 namespace UnitTest.Common.JSON
 {
     [TestClass]
-    public class UnitTestJSONArray
+    public class UnitTestJArray
     {
         [TestMethod]
-        public void TestNullJSONArrayWithWhitespace()
+        public void TestNullJArrayWithWhitespace()
         {
             // arrange
             string actualValue;
             string expectedValue = "[]";
-            JSONArray ja = new JSONArray();
+            JArray ja = new JArray();
             // act
-            actualValue = ja.ToString(true);
+            actualValue = ja.ToString(JsonFormat.Indent);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestNullJSONArrayNoWhitespace()
+        public void TestNullJArrayNoWhitespace()
         {
             // arrange
             string actualValue;
             string expectedValue = "[]";
-            JSONArray ja = new JSONArray();
+            JArray ja = new JArray();
             // act
-            actualValue = ja.ToString(false);
+            actualValue = ja.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestNullJSONArrayDefaultWhitespace()
+        public void TestNullJArrayDefaultWhitespace()
         {
             // arrange
             string actualValue;
             string expectedValue = "[]";
-            JSONArray ja = new JSONArray();
+            JArray ja = new JArray();
             // act
             actualValue = ja.ToString();
             // assert
@@ -47,191 +47,215 @@ namespace UnitTest.Common.JSON
         }
 
         [TestMethod]
-        public void TestJSONArrayNullValue()
+        public void TestJArrayNullValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "[null]";
-            JSONArray ja = new JSONArray();
-            ja.Add(null);
+            JArray ja = new JArray
+            {
+                null
+            };
             // act
-            actualValue = ja.ToString(false);
+            actualValue = ja.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONArrayNullValueWhitespace()
+        public void TestJArrayNullValueWhitespace()
         {
             // arrange
             string actualValue;
             string expectedValue = "[\r\n  null\r\n]";
-            JSONArray ja = new JSONArray();
-            ja.Add(null);
+            JArray ja = new JArray
+            {
+                null
+            };
             // act
-            actualValue = ja.ToString(true);
+            actualValue = ja.ToString(JsonFormat.Indent);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONArrayFalseValue()
+        public void TestJArrayFalseValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "[false]";
-            JSONArray ja = new JSONArray();
-            ja.Add(false);
+            JArray ja = new JArray
+            {
+                false
+            };
             // act
-            actualValue = ja.ToString(false);
+            actualValue = ja.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONArrayTrueValue()
+        public void TestJArrayTrueValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "[true]";
-            JSONArray ja = new JSONArray();
-            ja.Add(true);
+            JArray ja = new JArray
+            {
+                true
+            };
             // act
-            actualValue = ja.ToString(false);
+            actualValue = ja.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONArrayStringValue()
+        public void TestJArrayStringValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "[\"abc\"]";
-            JSONArray ja = new JSONArray();
-            ja.Add("abc");
+            JArray ja = new JArray
+            {
+                "abc"
+            };
             // act
-            actualValue = ja.ToString(false);
+            actualValue = ja.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONArrayIntValue()
+        public void TestJArrayIntValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "[123]";
-            JSONArray ja = new JSONArray();
-            ja.Add(123);
+            JArray ja = new JArray
+            {
+                123
+            };
             // act
-            actualValue = ja.ToString(false);
+            actualValue = ja.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONArrayDoubleValue()
+        public void TestJArrayDoubleValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "[123.45]";
-            JSONArray ja = new JSONArray();
-            ja.Add(123.45);
+            JArray ja = new JArray
+            {
+                123.45
+            };
             // act
-            actualValue = ja.ToString(false);
+            actualValue = ja.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONArrayJSONObjectValue()
+        public void TestJArrayJObjectValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "[123.45,{\"key\":\"value\"}]";
-            JSONArray ja = new JSONArray();
-            JSONObject jo = new JSONObject();
-            jo.Add("key", "value");
+            JArray ja = new JArray();
+            JObject jo = new JObject
+            {
+                { "key", "value" }
+            };
             ja.Add(123.45);
             ja.Add(jo);
             // act
-            actualValue = ja.ToString(false);
+            actualValue = ja.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONArrayJSONArrayValue()
+        public void TestJArrayJArrayValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "[123.45,[\"key\",\"value\"]]";
-            JSONArray ja = new JSONArray();
-            JSONArray ja2 = new JSONArray();
-            ja.Add(123.45);
-            ja2.Add("key");
-            ja2.Add("value");
-            ja.Add(ja2);
+            JArray ja2 = new JArray
+            {
+                "key",
+                "value"
+            };
+            JArray ja = new JArray
+            {
+                123.45,
+                ja2
+            };
             // act
-            actualValue = ja.ToString(false);
+            actualValue = ja.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONArrayMultiValue()
+        public void TestJArrayMultiValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "[\"abc\",123.45]";
-            JSONArray ja = new JSONArray();
-            ja.Add("abc");
-            ja.Add(123.45);
+            JArray ja = new JArray
+            {
+                "abc",
+                123.45
+            };
             // act
-            actualValue = ja.ToString(false);
+            actualValue = ja.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONArrayMultiValueWhitespace()
+        public void TestJArrayMultiValueWhitespace()
         {
             // arrange
             string actualValue;
             string expectedValue = "[\r\n  \"abc\",\r\n  123.45,\r\n  null\r\n]";
-            JSONArray ja = new JSONArray();
-            ja.Add("abc");
-            ja.Add(123.45);
-            ja.Add(null);
+            JArray ja = new JArray
+            {
+                "abc",
+                123.45,
+                null
+            };
             // act
-            actualValue = ja.ToString(true);
+            actualValue = ja.ToString(JsonFormat.Indent);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONArrayNewEmpty()
+        public void TestJArrayNewEmpty()
         {
             // arrange
             string actualValue;
             string expectedValue = "[]";
-            JSONArray ja = new JSONArray(expectedValue);
+            JArray ja = JArray.Parse(expectedValue);
             // act
-            actualValue = ja.ToString(true);
+            actualValue = ja.ToString(JsonFormat.Indent);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONArrayNewValues()
+        public void TestJArrayNewValues()
         {
             // arrange
             string actualValue;
             string expectedValue = "[\r\n  \"abc\",\r\n  123.45,\r\n  null\r\n]";
-            JSONArray ja = new JSONArray(expectedValue);
+            JArray ja = JArray.Parse(expectedValue);
             // act
-            actualValue = ja.ToString(true);
+            actualValue = ja.ToString(JsonFormat.Indent);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }

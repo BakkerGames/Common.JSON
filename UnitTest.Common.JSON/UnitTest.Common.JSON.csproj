@@ -53,8 +53,8 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="UnitTestJSONArray.cs" />
-    <Compile Include="UnitTestJSONObject.cs" />
+    <Compile Include="UnitTestJArray.cs" />
+    <Compile Include="UnitTestJObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -5,41 +5,41 @@ using Common.JSON;
 namespace UnitTest.Common.JSON
 {
     [TestClass]
-    public class UnitTestJSONObject
+    public class UnitTestJObject
     {
         [TestMethod]
-        public void TestNullJSONObjectWithWhitespace()
+        public void TestNullJObjectWithWhitespace()
         {
             // arrange
             string actualValue;
             string expectedValue = "{}";
-            JSONObject jo = new JSONObject();
+            JObject jo = new JObject();
             // act
-            actualValue = jo.ToString(true);
+            actualValue = jo.ToString(JsonFormat.Indent);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestNullJSONObjectNoWhitespace()
+        public void TestNullJObjectNoWhitespace()
         {
             // arrange
             string actualValue;
             string expectedValue = "{}";
-            JSONObject jo = new JSONObject();
+            JObject jo = new JObject();
             // act
-            actualValue = jo.ToString(false);
+            actualValue = jo.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestNullJSONObjectDefaultWhitespace()
+        public void TestNullJObjectDefaultWhitespace()
         {
             // arrange
             string actualValue;
             string expectedValue = "{}";
-            JSONObject jo = new JSONObject();
+            JObject jo = new JObject();
             // act
             actualValue = jo.ToString();
             // assert
@@ -47,230 +47,262 @@ namespace UnitTest.Common.JSON
         }
 
         [TestMethod]
-        public void TestJSONObjectNullValue()
+        public void TestJObjectNullValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\"key\":null}";
-            JSONObject jo = new JSONObject();
-            jo.Add("key", null);
+            JObject jo = new JObject
+            {
+                { "key", null }
+            };
             // act
-            actualValue = jo.ToString(false);
+            actualValue = jo.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectFalseValue()
+        public void TestJObjectFalseValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\"key\":false}";
-            JSONObject jo = new JSONObject();
-            jo.Add("key", false);
+            JObject jo = new JObject
+            {
+                { "key", false }
+            };
             // act
-            actualValue = jo.ToString(false);
+            actualValue = jo.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectTrueValue()
+        public void TestJObjectTrueValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\"key\":true}";
-            JSONObject jo = new JSONObject();
-            jo.Add("key", true);
+            JObject jo = new JObject
+            {
+                { "key", true }
+            };
             // act
-            actualValue = jo.ToString(false);
+            actualValue = jo.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectStringValue()
+        public void TestJObjectStringValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\"key\":\"abc\"}";
-            JSONObject jo = new JSONObject();
-            jo.Add("key", "abc");
+            JObject jo = new JObject
+            {
+                { "key", "abc" }
+            };
             // act
-            actualValue = jo.ToString(false);
+            actualValue = jo.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectStringValueCtrlChars()
+        public void TestJObjectStringValueCtrlChars()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\"key\":\"\\r\\n\\t\\b\\f\\u1234\"}";
-            JSONObject jo = new JSONObject();
-            jo.Add("key", "\r\n\t\b\f\u1234");
+            JObject jo = new JObject
+            {
+                { "key", "\r\n\t\b\f\u1234" }
+            };
             // act
-            actualValue = jo.ToString(false);
+            actualValue = jo.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectIntValue()
+        public void TestJObjectIntValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\"key\":123}";
-            JSONObject jo = new JSONObject();
-            jo.Add("key", 123);
+            JObject jo = new JObject
+            {
+                { "key", 123 }
+            };
             // act
-            actualValue = jo.ToString(false);
+            actualValue = jo.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectIntValueWhitespace()
+        public void TestJObjectIntValueWhitespace()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\r\n  \"key\": 123\r\n}";
-            JSONObject jo = new JSONObject();
-            jo.Add("key", 123);
+            JObject jo = new JObject
+            {
+                { "key", 123 }
+            };
             // act
-            actualValue = jo.ToString(true);
+            actualValue = jo.ToString(JsonFormat.Indent);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectDoubleValue()
+        public void TestJObjectDoubleValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\"key\":123.45}";
-            JSONObject jo = new JSONObject();
-            jo.Add("key", 123.45);
+            JObject jo = new JObject
+            {
+                { "key", 123.45 }
+            };
             // act
-            actualValue = jo.ToString(false);
+            actualValue = jo.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectDateValue()
+        public void TestJObjectDateValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\"key\":\"2017-01-02T00:00:00.0000000\"}";
-            JSONObject jo = new JSONObject();
-            jo.Add("key", DateTime.Parse("01/02/2017"));
+            JObject jo = new JObject
+            {
+                { "key", DateTime.Parse("01/02/2017") }
+            };
             // act
-            actualValue = jo.ToString(false);
+            actualValue = jo.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectDatetimeValue()
+        public void TestJObjectDatetimeValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\"key\":\"2017-01-02T16:42:25.0000000\"}";
-            JSONObject jo = new JSONObject();
-            jo.Add("key", DateTime.Parse("01/02/2017 16:42:25"));
+            JObject jo = new JObject
+            {
+                { "key", DateTime.Parse("01/02/2017 16:42:25") }
+            };
             // act
-            actualValue = jo.ToString(false);
+            actualValue = jo.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectJSONObjectValue()
+        public void TestJObjectJObjectValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\"key\":{\"newkey\":456}}";
-            JSONObject jo = new JSONObject();
-            JSONObject jo2 = new JSONObject();
-            jo2.Add("newkey", 456);
-            jo.Add("key", jo2);
+            JObject jo2 = new JObject
+            {
+                { "newkey", 456 }
+            };
+            JObject jo = new JObject
+            {
+                { "key", jo2 }
+            };
             // act
-            actualValue = jo.ToString(false);
+            actualValue = jo.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectJSONArrayValue()
+        public void TestJObjectJArrayValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\"key\":[\"newkey\",456]}";
-            JSONObject jo = new JSONObject();
-            JSONArray ja = new JSONArray();
-            ja.Add("newkey");
-            ja.Add(456);
-            jo.Add("key", ja);
+            JArray ja = new JArray
+            {
+                "newkey",
+                456
+            };
+            JObject jo = new JObject
+            {
+                { "key", ja }
+            };
             // act
-            actualValue = jo.ToString(false);
+            actualValue = jo.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectMultiValue()
+        public void TestJObjectMultiValue()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\"key\":123,\"otherkey\":789.12}";
-            JSONObject jo = new JSONObject();
-            jo.Add("key", 123);
-            jo.Add("otherkey", 789.12);
+            JObject jo = new JObject
+            {
+                { "key", 123 },
+                { "otherkey", 789.12 }
+            };
             // act
-            actualValue = jo.ToString(false);
+            actualValue = jo.ToString(JsonFormat.None);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectMultiValueWhitespace()
+        public void TestJObjectMultiValueWhitespace()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\r\n  \"key\": 123,\r\n  \"otherkey\": 789.12\r\n}";
-            JSONObject jo = new JSONObject();
-            jo.Add("key", 123);
-            jo.Add("otherkey", 789.12);
+            JObject jo = new JObject
+            {
+                { "key", 123 },
+                { "otherkey", 789.12 }
+            };
             // act
-            actualValue = jo.ToString(true);
+            actualValue = jo.ToString(JsonFormat.Indent);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectNewEmpty()
+        public void TestJObjectNewEmpty()
         {
             // arrange
             string actualValue;
             string expectedValue = "{}";
-            JSONObject jo = new JSONObject(expectedValue);
+            JObject jo = JObject.Parse(expectedValue);
             // act
-            actualValue = jo.ToString(true);
+            actualValue = jo.ToString(JsonFormat.Indent);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }
 
         [TestMethod]
-        public void TestJSONObjectNewValues()
+        public void TestJObjectNewValues()
         {
             // arrange
             string actualValue;
             string expectedValue = "{\r\n  \"key\": 123,\r\n  \"otherkey\": 789.12\r\n}";
-            JSONObject jo = new JSONObject(expectedValue);
+            JObject jo = JObject.Parse(expectedValue);
             // act
-            actualValue = jo.ToString(true);
+            actualValue = jo.ToString(JsonFormat.Indent);
             // assert
             Assert.AreEqual(expectedValue, actualValue);
         }

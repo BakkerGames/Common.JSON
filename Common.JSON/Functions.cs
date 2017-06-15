@@ -1,4 +1,4 @@
-﻿// Functions.cs - 03/04/2017
+﻿// Functions.cs - 06/13/2017
 
 using System;
 using System.Text;
@@ -69,7 +69,7 @@ namespace Common.JSON
             throw new SystemException();
         }
 
-        internal static string ToJSONString(string input)
+        internal static string ToJsonString(string input)
         {
             // handle escaping of special chars here
             StringBuilder result = new StringBuilder();

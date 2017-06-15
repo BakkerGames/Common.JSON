@@ -1,35 +1,63 @@
-﻿// JSONArray.cs - 03/05/2017
+﻿// JArray.cs - 06/14/2017
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
 namespace Common.JSON
 {
-    sealed public class JSONArray : List<object>
+    sealed public class JArray : IEnumerable<object>
     {
-        public JSONArray()
+        private List<object> _data = new List<object>();
+
+        public IEnumerator<object> GetEnumerator()
         {
+            return ((IEnumerable<object>)_data).GetEnumerator();
         }
 
-        public JSONArray(string input)
+        IEnumerator IEnumerable.GetEnumerator()
         {
-            int pos = 0;
-            _FromString(this, input, ref pos);
+            return ((IEnumerable<object>)_data).GetEnumerator();
+        }
+
+        public void Clear()
+        {
+            _data.Clear();
+        }
+
+        public void Add(object value)
+        {
+            _data.Add(value);
+        }
+
+        public void Remove(int index)
+        {
+            _data.RemoveAt(index);
+        }
+
+        public object GetValue(int index)
+        {
+            return _data[index];
+        }
+
+        public void SetValue(int index, object value)
+        {
+            _data[index] = value;
         }
 
         public override string ToString()
         {
-            return ToString(0, false);
+            return _ToString(JsonFormat.None, 0);
         }
 
-        public string ToString(bool addWhitespace)
+        public string ToString(JsonFormat format)
         {
-            return ToString(0, addWhitespace);
+            return _ToString(format, 0);
         }
 
-        internal string ToString(int level, bool addWhitespace)
+        internal string _ToString(JsonFormat format, int level)
         {
             StringBuilder sb = new StringBuilder();
             sb.Append("[");
@@ -40,7 +68,7 @@ namespace Common.JSON
                 if (addComma)
                 {
                     sb.Append(",");
-                    if (addWhitespace)
+                    if (format == JsonFormat.Indent)
                     {
                         sb.AppendLine();
                         sb.Append(new string(' ', level * Functions.IndentSize));
@@ -48,7 +76,7 @@ namespace Common.JSON
                 }
                 else
                 {
-                    if (addWhitespace)
+                    if (format == JsonFormat.Indent)
                     {
                         sb.AppendLine();
                         sb.Append(new string(' ', level * Functions.IndentSize));
@@ -68,13 +96,13 @@ namespace Common.JSON
                     // number with no quotes
                     sb.Append(obj.ToString());
                 }
-                else if (obj.GetType() == typeof(JSONObject))
+                else if (obj.GetType() == typeof(JObject))
                 {
-                    sb.Append(((JSONObject)obj).ToString(level, addWhitespace));
+                    sb.Append(((JObject)obj)._ToString(format, level));
                 }
-                else if (obj.GetType() == typeof(JSONArray))
+                else if (obj.GetType() == typeof(JArray))
                 {
-                    sb.Append(((JSONArray)obj).ToString(level, addWhitespace));
+                    sb.Append(((JArray)obj)._ToString(format, level));
                 }
                 else if (obj.GetType() == typeof(DateTime))
                 {
@@ -86,12 +114,12 @@ namespace Common.JSON
                 else // string or other type which needs quotes
                 {
                     sb.Append("\"");
-                    sb.Append(Functions.ToJSONString(obj.ToString()));
+                    sb.Append(Functions.ToJsonString(obj.ToString()));
                     sb.Append("\"");
                 }
             }
             level--;
-            if (addComma && addWhitespace)
+            if (addComma && format == JsonFormat.Indent)
             {
                 sb.AppendLine();
                 sb.Append(new string(' ', level * Functions.IndentSize));
@@ -100,23 +128,36 @@ namespace Common.JSON
             return sb.ToString();
         }
 
-        public static JSONArray FromString(string input)
+        public static bool TryParse(string input, ref JArray result)
+        {
+            try
+            {
+                result = Parse(input);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public static JArray Parse(string input)
         {
             if (string.IsNullOrEmpty(input))
             {
                 return null;
             }
             int pos = 0;
-            JSONArray result = new JSONArray();
-            _FromString(result, input, ref pos);
+            JArray result = new JArray();
+            _Parse(result, input, ref pos);
             return result;
         }
 
-        internal static void _FromString(JSONArray result, string input, ref int pos)
+        internal static void _Parse(JArray result, string input, ref int pos)
         {
             char c;
             Functions.SkipWhitespace(input, ref pos);
-            if (pos >= input.Length || input[pos] != '[') // not a JSONArray
+            if (pos >= input.Length || input[pos] != '[') // not a JArray
             {
                 throw new SystemException();
             }
@@ -170,7 +211,7 @@ namespace Common.JSON
                     value.Clear();
                     continue;
                 }
-                if (c == ']') // end of JSONArray
+                if (c == ']') // end of JArray
                 {
                     if (!readyForValue && !inValue && !readyForComma)
                     {
@@ -182,16 +223,16 @@ namespace Common.JSON
                     }
                     break;
                 }
-                // handle JSONObjects and JSONArrays
-                if (c == '{') // JSONObject as a value
+                // handle JObjects and JArrays
+                if (c == '{') // JObject as a value
                 {
                     if (!readyForValue)
                     {
                         throw new SystemException();
                     }
                     pos--;
-                    JSONObject jo = new JSONObject();
-                    JSONObject._FromString(jo, input, ref pos);
+                    JObject jo = new JObject();
+                    JObject._Parse(jo, input, ref pos);
                     result.Add(jo);
                     Functions.SkipWhitespace(input, ref pos);
                     readyForComma = true;
@@ -199,15 +240,15 @@ namespace Common.JSON
                     value.Clear();
                     continue;
                 }
-                if (c == '[') // JSONArray as a value
+                if (c == '[') // JArray as a value
                 {
                     if (!readyForValue)
                     {
                         throw new SystemException();
                     }
                     pos--;
-                    JSONArray ja = new JSONArray();
-                    _FromString(ja, input, ref pos);
+                    JArray ja = new JArray();
+                    _Parse(ja, input, ref pos);
                     result.Add(ja);
                     Functions.SkipWhitespace(input, ref pos);
                     readyForComma = true;
@@ -215,7 +256,7 @@ namespace Common.JSON
                     value.Clear();
                     continue;
                 }
-                // not a string, JSONObject, JSONArray value
+                // not a string, JObject, JArray value
                 if (readyForValue)
                 {
                     readyForValue = false;
@@ -232,13 +273,8 @@ namespace Common.JSON
             }
         }
 
-        private static void _SaveValue(ref JSONArray obj, string value, bool inStringValue)
+        private static void _SaveValue(ref JArray obj, string value, bool inStringValue)
         {
-            int intValue;
-            long longValue;
-            decimal decimalValue;
-            double doubleValue;
-            DateTime datetimeValue;
             if (!inStringValue)
             {
                 value = value.TrimEnd(); // helps with parsing
@@ -246,7 +282,8 @@ namespace Common.JSON
             if (inStringValue)
             {
                 // see if the string is a datetime format
-                if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out datetimeValue))
+                if (DateTime.TryParse(value, CultureInfo.InvariantCulture,
+                                      DateTimeStyles.RoundtripKind, out DateTime datetimeValue))
                 {
                     obj.Add(datetimeValue);
                 }
@@ -267,19 +304,19 @@ namespace Common.JSON
             {
                 obj.Add(false);
             }
-            else if (int.TryParse(value, out intValue))
+            else if (int.TryParse(value, out int intValue))
             {
                 obj.Add(intValue); // default to int for anything smaller
             }
-            else if (long.TryParse(value, out longValue))
+            else if (long.TryParse(value, out long longValue))
             {
                 obj.Add(longValue);
             }
-            else if (decimal.TryParse(value, out decimalValue))
+            else if (decimal.TryParse(value, out decimal decimalValue))
             {
                 obj.Add(decimalValue);
             }
-            else if (double.TryParse(value, out doubleValue))
+            else if (double.TryParse(value, out double doubleValue))
             {
                 obj.Add(doubleValue);
             }
