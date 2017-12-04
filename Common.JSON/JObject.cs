@@ -1,4 +1,4 @@
-﻿// JObject.cs - 07/21/2017
+﻿// JObject.cs - 12/03/2017
 
 using System;
 using System.Collections;
@@ -22,6 +22,15 @@ namespace Common.JSON
             return ((IEnumerable<KeyValuePair<string, object>>)_data).GetEnumerator();
         }
 
+        public JObject()
+        {
+        }
+
+        public JObject(JObject values)
+        {
+            Append(values);
+        }
+
         public void Clear()
         {
             _data.Clear();
@@ -30,6 +39,19 @@ namespace Common.JSON
         public void Add(string name, object value)
         {
             _data.Add(name, value);
+        }
+
+        public void Append(JObject values)
+        {
+            if (values == null)
+            {
+                return;
+            }
+            foreach (KeyValuePair<string, object> keyvalue in values)
+            {
+                // will overwrite any matching values
+                SetValue(keyvalue.Key, keyvalue.Value);
+            }
         }
 
         public void Remove(string name)
@@ -46,7 +68,7 @@ namespace Common.JSON
             {
                 return _data[name];
             }
-            throw new KeyNotFoundException(name);
+            throw new SystemException($"Key not found: {name}");
         }
 
         public object GetValueOrNull(string name)
@@ -242,7 +264,7 @@ namespace Common.JSON
             Functions.SkipWhitespace(input, ref pos);
             if (pos >= input.Length || input[pos] != '{') // not a JObject
             {
-                throw new SystemException();
+                throw new SystemException($"Not a JObject, char = '{input[pos]}'");
             }
             pos++;
             Functions.SkipWhitespace(input, ref pos);
@@ -285,14 +307,14 @@ namespace Common.JSON
                         value.Clear();
                         continue;
                     }
-                    throw new SystemException();
+                    throw new SystemException("Quote char when not ReadyForKey or ReadyForValue");
                 }
                 // handle other parts of the syntax
                 if (c == ':') // between key and value
                 {
                     if (!readyForColon)
                     {
-                        throw new SystemException();
+                        throw new SystemException("Colon char when not ReadyForColon");
                     }
                     Functions.SkipWhitespace(input, ref pos);
                     readyForValue = true;
@@ -303,7 +325,7 @@ namespace Common.JSON
                 {
                     if (!inValue && !readyForComma)
                     {
-                        throw new SystemException();
+                        throw new SystemException("Comma char when not InValue or ReadyForComma");
                     }
                     if (inValue)
                     {
@@ -322,7 +344,7 @@ namespace Common.JSON
                 {
                     if (!readyForKey && !inValue && !readyForComma)
                     {
-                        throw new SystemException();
+                        throw new SystemException("EndBrace char when not ReadyForKey, InValue, or ReadyForComma");
                     }
                     if (key.Length > 0) // ignore empty key
                     {
@@ -335,7 +357,7 @@ namespace Common.JSON
                 {
                     if (!readyForValue)
                     {
-                        throw new SystemException();
+                        throw new SystemException("BeginBrace char when not ReadyForValue");
                     }
                     pos--;
                     JObject jo = new JObject();
@@ -352,7 +374,7 @@ namespace Common.JSON
                 {
                     if (!readyForValue)
                     {
-                        throw new SystemException();
+                        throw new SystemException("BeginBracket char when not ReadyForValue");
                     }
                     pos--;
                     JArray ja = new JArray();
@@ -378,7 +400,7 @@ namespace Common.JSON
                     continue;
                 }
                 // incorrect syntax!
-                throw new SystemException();
+                throw new SystemException($"Incorrect syntax, char = '{c}'");
             }
         }
 
@@ -431,7 +453,7 @@ namespace Common.JSON
             }
             else // unknown or non-numeric value
             {
-                throw new SystemException();
+                throw new SystemException($"Invalid value = '{value}'");
             }
         }
 

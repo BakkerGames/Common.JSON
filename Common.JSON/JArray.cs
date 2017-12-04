@@ -1,4 +1,4 @@
-﻿// JArray.cs - 07/21/2017
+﻿// JArray.cs - 12/03/2017
 
 using System;
 using System.Collections;
@@ -22,6 +22,15 @@ namespace Common.JSON
             return ((IEnumerable<object>)_data).GetEnumerator();
         }
 
+        public JArray()
+        {
+        }
+
+        public JArray(JArray values)
+        {
+            Append(values);
+        }
+
         public void Clear()
         {
             _data.Clear();
@@ -30,6 +39,18 @@ namespace Common.JSON
         public void Add(object value)
         {
             _data.Add(value);
+        }
+
+        public void Append(JArray jarray)
+        {
+            if (jarray == null)
+            {
+                return;
+            }
+            foreach (object value in jarray)
+            {
+                _data.Add(value);
+            }
         }
 
         public void Remove(int index)
@@ -200,7 +221,7 @@ namespace Common.JSON
             Functions.SkipWhitespace(input, ref pos);
             if (pos >= input.Length || input[pos] != '[') // not a JArray
             {
-                throw new SystemException();
+                throw new SystemException($"Not a JArray, char = '{input[pos]}'");
             }
             pos++;
             Functions.SkipWhitespace(input, ref pos);
@@ -231,14 +252,14 @@ namespace Common.JSON
                         value.Clear();
                         continue;
                     }
-                    throw new SystemException();
+                    throw new SystemException("Quote char when not ReadyForValue");
                 }
                 // handle other parts of the syntax
                 if (c == ',') // after value, before next
                 {
                     if (!inValue && !readyForComma)
                     {
-                        throw new SystemException();
+                        throw new SystemException("Comma char when not InValue or ReadyForComma");
                     }
                     if (inValue)
                     {
@@ -256,7 +277,7 @@ namespace Common.JSON
                 {
                     if (!readyForValue && !inValue && !readyForComma)
                     {
-                        throw new SystemException();
+                        throw new SystemException("EndBracket char when not ReadyForValue, InValue, or ReadyForComma");
                     }
                     if (value.Length > 0) // ignore empty value
                     {
@@ -269,7 +290,7 @@ namespace Common.JSON
                 {
                     if (!readyForValue)
                     {
-                        throw new SystemException();
+                        throw new SystemException("BeginBrace char when not ReadyForValue");
                     }
                     pos--;
                     JObject jo = new JObject();
@@ -285,7 +306,7 @@ namespace Common.JSON
                 {
                     if (!readyForValue)
                     {
-                        throw new SystemException();
+                        throw new SystemException("BeginBracket char when not ReadyForValue");
                     }
                     pos--;
                     JArray ja = new JArray();
@@ -310,7 +331,7 @@ namespace Common.JSON
                     continue;
                 }
                 // incorrect syntax!
-                throw new SystemException();
+                throw new SystemException($"Incorrect syntax, char = '{c}'");
             }
         }
 
@@ -363,7 +384,7 @@ namespace Common.JSON
             }
             else // unknown or non-numeric value
             {
-                throw new SystemException();
+                throw new SystemException($"Invalid value = '{value}'");
             }
         }
 
