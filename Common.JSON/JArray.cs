@@ -1,4 +1,4 @@
-﻿// JArray.cs - 12/03/2017
+﻿// JArray.cs - 02/02/2018
 
 using System;
 using System.Collections;
@@ -10,6 +10,9 @@ namespace Common.JSON
 {
     sealed public class JArray : IEnumerable<object>
     {
+        private const string _dateOnlyFormat = "yyyy-MM-dd";
+        private const string _dateTimeFormat = "O";
+
         private List<object> _data = new List<object>();
 
         public IEnumerator<object> GetEnumerator()
@@ -29,6 +32,14 @@ namespace Common.JSON
         public JArray(JArray values)
         {
             Append(values);
+        }
+
+        public int Count
+        {
+            get
+            {
+                return _data.Count;
+            }
         }
 
         public void Clear()
@@ -119,9 +130,17 @@ namespace Common.JSON
                 }
                 else if (obj.GetType() == typeof(DateTime))
                 {
-                    // datetime converted to ISO 8601 round-trip format "O"
+                    // datetime converted to string format
                     sb.Append("\"");
-                    sb.Append(((DateTime)obj).ToString("O"));
+                    DateTime tempDT = (DateTime)obj;
+                    if (tempDT.Hour + tempDT.Minute + tempDT.Second + tempDT.Millisecond == 0)
+                    {
+                        sb.Append(tempDT.ToString(_dateOnlyFormat));
+                    }
+                    else
+                    {
+                        sb.Append(tempDT.ToString(_dateTimeFormat));
+                    }
                     sb.Append("\"");
                 }
                 else if (obj.GetType() == typeof(JObject))

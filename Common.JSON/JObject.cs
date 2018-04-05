@@ -1,4 +1,4 @@
-﻿// JObject.cs - 12/03/2017
+﻿// JObject.cs - 02/21/2018
 
 using System;
 using System.Collections;
@@ -10,6 +10,9 @@ namespace Common.JSON
 {
     sealed public class JObject : IEnumerable<KeyValuePair<string, object>>
     {
+        private const string _dateOnlyFormat = "yyyy-MM-dd";
+        private const string _dateTimeFormat = "O";
+
         private Dictionary<string, object> _data = new Dictionary<string, object>();
 
         public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
@@ -29,6 +32,14 @@ namespace Common.JSON
         public JObject(JObject values)
         {
             Append(values);
+        }
+
+        public int Count
+        {
+            get
+            {
+                return _data.Count;
+            }
         }
 
         public void Clear()
@@ -97,9 +108,14 @@ namespace Common.JSON
             return _data.ContainsKey(name);
         }
 
-        public IEnumerable<string> Names()
+        public List<string> Names()
         {
-            return _data.Keys;
+            List<string> result = new List<string>();
+            foreach (string key in _data.Keys)
+            {
+                result.Add(key);
+            }
+            return result;
         }
 
         public override string ToString()
@@ -162,9 +178,17 @@ namespace Common.JSON
                 }
                 else if (obj.GetType() == typeof(DateTime))
                 {
-                    // datetime converted to ISO 8601 round-trip format "O"
+                    // datetime converted to string format
                     sb.Append("\"");
-                    sb.Append(((DateTime)obj).ToString("O"));
+                    DateTime tempDT = (DateTime)obj;
+                    if (tempDT.Hour + tempDT.Minute + tempDT.Second + tempDT.Millisecond == 0)
+                    {
+                        sb.Append(tempDT.ToString(_dateOnlyFormat));
+                    }
+                    else
+                    {
+                        sb.Append(tempDT.ToString(_dateTimeFormat));
+                    }
                     sb.Append("\"");
                 }
                 else if (obj.GetType() == typeof(JObject))
