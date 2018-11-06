@@ -1,4 +1,4 @@
-﻿// JArray.cs - 02/02/2018
+﻿// JArray.cs - 11/06/2018
 
 using System;
 using System.Collections;
@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Common.JSON
 {
-    sealed public class JArray : IEnumerable<object>
+    sealed public partial class JArray : IEnumerable<object>
     {
         private const string _dateOnlyFormat = "yyyy-MM-dd";
         private const string _dateTimeFormat = "O";
@@ -122,6 +122,11 @@ namespace Common.JSON
                 else if (obj.GetType() == typeof(bool))
                 {
                     sb.Append((bool)obj ? "true" : "false"); // must be lowercase
+                }
+                else if (Functions.IsDecimalType(obj))
+                {
+                    // normalize decimal places
+                    sb.Append(Functions.NormalizeDecimal(obj.ToString()));
                 }
                 else if (Functions.IsNumericType(obj))
                 {
@@ -253,6 +258,17 @@ namespace Common.JSON
             {
                 // get next char
                 c = input[pos];
+                // whitespace is always allowed at this point in the loop
+                if (char.IsWhiteSpace(c))
+                {
+                    Functions.SkipWhitespace(input, ref pos);
+                    continue;
+                }
+                if (c == '/') // ignore comments, //... or /*...*/
+                {
+                    Functions.SkipWhitespace(input, ref pos);
+                    continue;
+                }
                 pos++;
                 // handle string value
                 if (c == '\"') // beginning of string value

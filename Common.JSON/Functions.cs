@@ -1,6 +1,20 @@
-﻿// Functions.cs - 12/03/2017
+﻿// Functions.cs - 11/06/2018
+
+// 06/06/2018 - SBakker
+//            - Added function NormalizeDecimal() to return deterministic string values
+//              for decimal inputs.
+// 05/31/2018 - SBakker
+//            - Skip non-standard comments as whitespace. Only used for reading,
+//              so can comment out lines in config.json files or whatever. Ignores
+//              any text in // to eol and /* to */. If end of file is found, that
+//              is fine and just ends the comment. This breaks the implementation
+//              by not throwing an error if the comments are found, but that seems
+//              a reasonable trade-off.
 
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Text;
 
 namespace Common.JSON
@@ -8,12 +22,157 @@ namespace Common.JSON
     static internal class Functions
     {
         internal static int IndentSize = 2;
+        internal static CultureInfo decimalCulture = CultureInfo.CreateSpecificCulture("en-US");
 
-        internal static void SkipWhitespace(string input, ref int pos)
+        internal static Stack<char> _charStack = new Stack<char>();
+
+        internal static char PeekNextChar(object input, ref int pos)
         {
-            while (pos < input.Length && char.IsWhiteSpace(input[pos]))
+            if (_charStack.Count > 0)
             {
-                pos++;
+                return _charStack.Peek();
+            }
+            if (input.GetType() == typeof(string))
+            {
+                return ((string)input)[pos];
+            }
+            else if (input.GetType() == typeof(TextReader))
+            {
+                int result = ((TextReader)input).Peek();
+                if (result < 0)
+                {
+                    throw new ArgumentOutOfRangeException();
+                }
+                return (char)result;
+            }
+            else
+            {
+                throw new SystemException($"Unknown type: {input.GetType()}");
+            }
+        }
+
+        internal static char ReadNextChar(object input, ref int pos)
+        {
+            if (_charStack.Count > 0)
+            {
+                return _charStack.Pop();
+            }
+            if (input.GetType() == typeof(string))
+            {
+                return ((string)input)[pos++];
+            }
+            else if (input.GetType() == typeof(TextReader))
+            {
+                int result = ((TextReader)input).Read();
+                if (result < 0)
+                {
+                    throw new ArgumentOutOfRangeException();
+                }
+                pos++; // use as a counter
+                return (char)result;
+            }
+            else
+            {
+                throw new SystemException($"Unknown type: {input.GetType()}");
+            }
+        }
+
+        internal static void PushLastChar(char c)
+        {
+            _charStack.Push(c);
+        }
+
+        internal static bool IsEOL(object input, ref int pos)
+        {
+            if (_charStack.Count > 0)
+            {
+                return false;
+            }
+            if (input.GetType() == typeof(string))
+            {
+                return ((string)input).Length >= pos;
+            }
+            else if (input.GetType() == typeof(TextReader))
+            {
+                int result = ((TextReader)input).Peek();
+                return (result < 0);
+            }
+            else
+            {
+                throw new SystemException($"Unknown type: {input.GetType()}");
+            }
+        }
+
+        internal static void SkipWhitespace(object input, ref int pos)
+        {
+            char currChar;
+            while (true)
+            {
+                if (IsEOL(input, ref pos))
+                {
+                    break;
+                }
+                try
+                {
+                    currChar = PeekNextChar(input, ref pos);
+                }
+                catch (Exception)
+                {
+                    break;
+                }
+                // use c# definition of whitespace
+                if (char.IsWhiteSpace(currChar))
+                {
+                    pos++;
+                    continue;
+                }
+                // check for comments
+                if (currChar == '/')
+                {
+                    char nextChar = ReadNextChar(input, ref pos);
+                    if (nextChar == '/') // to eol
+                    {
+
+                    }
+                    else if (nextChar == '*') // to */
+                    {
+
+                    }
+                    else
+                    {
+
+                    }
+                }
+                if (pos + 1 < input.Length && input[pos] == '/' && input[pos + 1] == '/')
+                {
+                    pos = pos + 2;
+                    while (pos < input.Length)
+                    {
+                        if (input[pos] == '\r' || input[pos] == '\n')
+                        {
+                            pos++;
+                            break;
+                        }
+                        pos++;
+                    }
+                    continue;
+                }
+                // allow non-standard comment, /* to */
+                if (pos + 1 < input.Length && input[pos] == '/' && input[pos + 1] == '*')
+                {
+                    pos = pos + 2;
+                    while (pos < input.Length)
+                    {
+                        if (input[pos - 1] == '*' && input[pos] == '/')
+                        {
+                            pos++;
+                            break;
+                        }
+                        pos++;
+                    }
+                    continue;
+                }
+                break;
             }
         }
 
@@ -152,6 +311,29 @@ namespace Common.JSON
             return false;
         }
 
+        internal static bool IsDecimalType(object value)
+        {
+            if (value == null)
+            {
+                return false;
+            }
+            Type t = value.GetType();
+            switch (Type.GetTypeCode(t))
+            {
+                case TypeCode.Single:
+                case TypeCode.Double:
+                case TypeCode.Decimal:
+                    return true;
+                case TypeCode.Object:
+                    if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Nullable<>))
+                    {
+                        return IsDecimalType(Nullable.GetUnderlyingType(t));
+                    }
+                    return false;
+            }
+            return false;
+        }
+
         internal static string FromEscapedChar(char c)
         {
             string result;
@@ -200,5 +382,42 @@ namespace Common.JSON
             return result;
         }
 
+        internal static string NormalizeDecimal(string value)
+        {
+            decimal tempValue;
+            if (string.IsNullOrEmpty(value))
+            {
+                return value;
+            }
+            if (!decimal.TryParse(value, out tempValue))
+            {
+                throw new SystemException($"Cannot parse as decimal: \"{value}\"");
+            }
+            return NormalizeDecimal(tempValue);
+        }
+
+        internal static string NormalizeDecimal(decimal value)
+        {
+            string result;
+            result = value.ToString(decimalCulture);
+            if (result.IndexOf('.') >= 0)
+            {
+                while (result.Length > 0)
+                {
+                    if (result.EndsWith(".")) // remove trailing decimal point
+                    {
+                        result = result.Substring(0, result.Length - 1);
+                        break; // done
+                    }
+                    if (result.EndsWith("0")) // remove trailing zero decimal digits
+                    {
+                        result = result.Substring(0, result.Length - 1);
+                        continue;
+                    }
+                    break;
+                }
+            }
+            return result;
+        }
     }
 }

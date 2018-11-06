@@ -1,4 +1,4 @@
-﻿// JObject.cs - 02/21/2018
+﻿// JObject.cs - 11/06/2018
 
 using System;
 using System.Collections;
@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Common.JSON
 {
-    sealed public class JObject : IEnumerable<KeyValuePair<string, object>>
+    sealed public partial class JObject : IEnumerable<KeyValuePair<string, object>>
     {
         private const string _dateOnlyFormat = "yyyy-MM-dd";
         private const string _dateTimeFormat = "O";
@@ -91,6 +91,15 @@ namespace Common.JSON
             return null;
         }
 
+        public bool IsNull(string name)
+        {
+            if (_data.ContainsKey(name))
+            {
+                return (_data[name] == null);
+            }
+            return true;
+        }
+
         public void SetValue(string name, object value)
         {
             if (_data.ContainsKey(name))
@@ -170,6 +179,11 @@ namespace Common.JSON
                 else if (obj.GetType() == typeof(bool))
                 {
                     sb.Append((bool)obj ? "true" : "false"); // must be lowercase
+                }
+                else if (Functions.IsDecimalType(obj))
+                {
+                    // normalize decimal places
+                    sb.Append(Functions.NormalizeDecimal(obj.ToString()));
                 }
                 else if (Functions.IsNumericType(obj))
                 {
@@ -304,6 +318,17 @@ namespace Common.JSON
             {
                 // get next char
                 c = input[pos];
+                // whitespace is always allowed at this point in the loop
+                if (char.IsWhiteSpace(c))
+                {
+                    Functions.SkipWhitespace(input, ref pos);
+                    continue;
+                }
+                if (c == '/') // ignore comments, //... or /*...*/
+                {
+                    Functions.SkipWhitespace(input, ref pos);
+                    continue;
+                }
                 pos++;
                 // handle key or string value
                 if (c == '\"') // beginning of key or string value
