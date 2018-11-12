@@ -1,20 +1,7 @@
-﻿// Functions.cs - 11/06/2018
-
-// 06/06/2018 - SBakker
-//            - Added function NormalizeDecimal() to return deterministic string values
-//              for decimal inputs.
-// 05/31/2018 - SBakker
-//            - Skip non-standard comments as whitespace. Only used for reading,
-//              so can comment out lines in config.json files or whatever. Ignores
-//              any text in // to eol and /* to */. If end of file is found, that
-//              is fine and just ends the comment. This breaks the implementation
-//              by not throwing an error if the comments are found, but that seems
-//              a reasonable trade-off.
+﻿// Functions.cs - 11/12/2018
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Text;
 
 namespace Common.JSON
@@ -24,97 +11,18 @@ namespace Common.JSON
         internal static int IndentSize = 2;
         internal static CultureInfo decimalCulture = CultureInfo.CreateSpecificCulture("en-US");
 
-        internal static Stack<char> _charStack = new Stack<char>();
-
-        internal static char PeekNextChar(object input, ref int pos)
-        {
-            if (_charStack.Count > 0)
-            {
-                return _charStack.Peek();
-            }
-            if (input.GetType() == typeof(string))
-            {
-                return ((string)input)[pos];
-            }
-            else if (input.GetType() == typeof(TextReader))
-            {
-                int result = ((TextReader)input).Peek();
-                if (result < 0)
-                {
-                    throw new ArgumentOutOfRangeException();
-                }
-                return (char)result;
-            }
-            else
-            {
-                throw new SystemException($"Unknown type: {input.GetType()}");
-            }
-        }
-
-        internal static char ReadNextChar(object input, ref int pos)
-        {
-            if (_charStack.Count > 0)
-            {
-                return _charStack.Pop();
-            }
-            if (input.GetType() == typeof(string))
-            {
-                return ((string)input)[pos++];
-            }
-            else if (input.GetType() == typeof(TextReader))
-            {
-                int result = ((TextReader)input).Read();
-                if (result < 0)
-                {
-                    throw new ArgumentOutOfRangeException();
-                }
-                pos++; // use as a counter
-                return (char)result;
-            }
-            else
-            {
-                throw new SystemException($"Unknown type: {input.GetType()}");
-            }
-        }
-
-        internal static void PushLastChar(char c)
-        {
-            _charStack.Push(c);
-        }
-
-        internal static bool IsEOL(object input, ref int pos)
-        {
-            if (_charStack.Count > 0)
-            {
-                return false;
-            }
-            if (input.GetType() == typeof(string))
-            {
-                return ((string)input).Length >= pos;
-            }
-            else if (input.GetType() == typeof(TextReader))
-            {
-                int result = ((TextReader)input).Peek();
-                return (result < 0);
-            }
-            else
-            {
-                throw new SystemException($"Unknown type: {input.GetType()}");
-            }
-        }
-
-        internal static void SkipWhitespace(object input, ref int pos)
+        internal static void SkipWhitespace(CharReader reader)
         {
             char currChar;
             while (true)
             {
-                if (IsEOL(input, ref pos))
+                if (reader.EOL())
                 {
                     break;
                 }
                 try
                 {
-                    currChar = PeekNextChar(input, ref pos);
+                    currChar = reader.Peek();
                 }
                 catch (Exception)
                 {
@@ -123,54 +31,53 @@ namespace Common.JSON
                 // use c# definition of whitespace
                 if (char.IsWhiteSpace(currChar))
                 {
-                    pos++;
+                    reader.Read(); // gobble char
                     continue;
                 }
                 // check for comments
                 if (currChar == '/')
                 {
-                    char nextChar = ReadNextChar(input, ref pos);
+                    reader.Read(); // gobble char
+                    char nextChar = reader.Read();
                     if (nextChar == '/') // to eol
                     {
-
-                    }
-                    else if (nextChar == '*') // to */
-                    {
-
-                    }
-                    else
-                    {
-
-                    }
-                }
-                if (pos + 1 < input.Length && input[pos] == '/' && input[pos + 1] == '/')
-                {
-                    pos = pos + 2;
-                    while (pos < input.Length)
-                    {
-                        if (input[pos] == '\r' || input[pos] == '\n')
+                        while (true)
                         {
-                            pos++;
-                            break;
+                            // not error if EOL before CR-LF
+                            if (reader.EOL())
+                            {
+                                break;
+                            }
+                            currChar = reader.Read();
+                            if (currChar == '\r' || currChar == '\n')
+                            {
+                                break;
+                            }
                         }
-                        pos++;
+                        continue;
                     }
-                    continue;
-                }
-                // allow non-standard comment, /* to */
-                if (pos + 1 < input.Length && input[pos] == '/' && input[pos + 1] == '*')
-                {
-                    pos = pos + 2;
-                    while (pos < input.Length)
+                    else if (nextChar == '*') /* to */
                     {
-                        if (input[pos - 1] == '*' && input[pos] == '/')
+                        nextChar = ' '; // clear for comparison
+                        while (true)
                         {
-                            pos++;
-                            break;
+                            // will throw an error if EOL before '*/' is found
+                            currChar = nextChar;
+                            nextChar = reader.Read();
+                            if (currChar == '*' && nextChar == '/')
+                            {
+                                break;
+                            }
                         }
-                        pos++;
+                        continue;
                     }
-                    continue;
+                    else // not a comment
+                    {
+                        // push back in reverse order
+                        reader.Push(nextChar);
+                        reader.Push(currChar);
+                        break;
+                    }
                 }
                 break;
             }
@@ -179,17 +86,14 @@ namespace Common.JSON
         /// <summary>
         /// Expects "pos" to be first char of string after initial quote
         /// </summary>
-        internal static string GetStringValue(string input, ref int pos)
+        internal static string GetStringValue(CharReader reader)
         {
             StringBuilder value = new StringBuilder();
             char c;
             bool lastWasSlash = false;
-            while (pos < input.Length)
+            while (true)
             {
-                // get next char
-                c = input[pos];
-                pos++;
-                // handle string value
+                c = reader.Read();
                 if (!lastWasSlash && c == '\\') // slashed char
                 {
                     lastWasSlash = true;
@@ -201,13 +105,7 @@ namespace Common.JSON
                     string escapedChar;
                     if (c == 'u')
                     {
-                        if (pos + 4 > input.Length)
-                        {
-                            // doesn't have four hex chars after "u"
-                            throw new SystemException("Invalid escaped char sequence");
-                        }
-                        escapedChar = FromUnicodeChar("\\u" + input[pos] + input[pos + 1] + input[pos + 2] + input[pos + 3]);
-                        pos = pos + 4;
+                        escapedChar = FromUnicodeChar($"\\u{reader.Read()}{reader.Read()}{reader.Read()}{reader.Read()}");
                     }
                     else
                     {
@@ -222,10 +120,7 @@ namespace Common.JSON
                 }
                 // any other char in a string
                 value.Append(c);
-                continue;
             }
-            // incorrect syntax!
-            throw new SystemException("Incorrect syntax");
         }
 
         internal static string ToJsonString(string input)

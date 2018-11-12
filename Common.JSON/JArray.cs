@@ -1,4 +1,4 @@
-﻿// JArray.cs - 11/06/2018
+﻿// JArray.cs - 11/12/2018
 
 using System;
 using System.Collections;
@@ -8,11 +8,8 @@ using System.Text;
 
 namespace Common.JSON
 {
-    sealed public partial class JArray : IEnumerable<object>
+    sealed public partial class JArray : JBase, IEnumerable<object>
     {
-        private const string _dateOnlyFormat = "yyyy-MM-dd";
-        private const string _dateTimeFormat = "O";
-
         private List<object> _data = new List<object>();
 
         public IEnumerator<object> GetEnumerator()
