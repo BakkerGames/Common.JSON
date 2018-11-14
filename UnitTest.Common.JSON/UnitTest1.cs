@@ -87,6 +87,14 @@ namespace UnitTest.Common.JSON
         }
 
         [TestMethod]
+        public void TestNewJObjectToStringOneItemNumTabs()
+        {
+            JObject testObj = new JObject();
+            testObj.Add("Hello", 123);
+            Assert.AreEqual(testObj.ToString(JsonFormat.Tabs), "{\r\n\t\"Hello\": 123\r\n}");
+        }
+
+        [TestMethod]
         public void TestNewJObjectToStringTwoItemNum()
         {
             JObject testObj = new JObject();
@@ -102,6 +110,15 @@ namespace UnitTest.Common.JSON
             testObj.Add("Hello", 123);
             testObj.Add("World", 999);
             Assert.AreEqual(testObj.ToString(JsonFormat.Indent), "{\r\n  \"Hello\": 123,\r\n  \"World\": 999\r\n}");
+        }
+
+        [TestMethod]
+        public void TestNewJObjectToStringTwoItemNumTabs()
+        {
+            JObject testObj = new JObject();
+            testObj.Add("Hello", 123);
+            testObj.Add("World", 999);
+            Assert.AreEqual(testObj.ToString(JsonFormat.Tabs), "{\r\n\t\"Hello\": 123,\r\n\t\"World\": 999\r\n}");
         }
     }
 }

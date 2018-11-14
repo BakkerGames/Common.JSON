@@ -1,11 +1,11 @@
-﻿// Enums.cs - 12/03/2017
+﻿// Enums.cs - 11/14/2018
 
 namespace Common.JSON
 {
     public enum JsonFormat
     {
         None,
-        Indent
+        Indent,
+        Tabs
     }
-
 }

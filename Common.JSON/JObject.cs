@@ -152,6 +152,11 @@ namespace Common.JSON
                         sb.AppendLine();
                         sb.Append(new string(' ', level * IndentSize));
                     }
+                    else if (format == JsonFormat.Tabs)
+                    {
+                        sb.AppendLine();
+                        sb.Append(new string('\t', level));
+                    }
                 }
                 else
                 {
@@ -160,12 +165,21 @@ namespace Common.JSON
                         sb.AppendLine();
                         sb.Append(new string(' ', level * IndentSize));
                     }
+                    else if (format == JsonFormat.Tabs)
+                    {
+                        sb.AppendLine();
+                        sb.Append(new string('\t', level));
+                    }
                     addComma = true;
                 }
                 sb.Append("\"");
                 sb.Append(_ToJsonString(keyvalue.Key));
                 sb.Append("\":");
                 if (format == JsonFormat.Indent)
+                {
+                    sb.Append(" ");
+                }
+                else if (format == JsonFormat.Tabs)
                 {
                     sb.Append(" ");
                 }
@@ -261,10 +275,18 @@ namespace Common.JSON
                 }
             }
             level--;
-            if (addComma && format == JsonFormat.Indent)
+            if (addComma)
             {
-                sb.AppendLine();
-                sb.Append(new string(' ', level * IndentSize));
+                if (format == JsonFormat.Indent)
+                {
+                    sb.AppendLine();
+                    sb.Append(new string(' ', level * IndentSize));
+                }
+                else if (format == JsonFormat.Tabs)
+                {
+                    sb.AppendLine();
+                    sb.Append(new string('\t', level));
+                }
             }
             sb.Append("}");
             return sb.ToString();
