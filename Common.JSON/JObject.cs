@@ -1,9 +1,10 @@
-﻿// JObject.cs - 11/12/2018
+﻿// JObject.cs - 11/14/2018
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Text;
 
 namespace Common.JSON
@@ -149,7 +150,7 @@ namespace Common.JSON
                     if (format == JsonFormat.Indent)
                     {
                         sb.AppendLine();
-                        sb.Append(new string(' ', level * Functions.IndentSize));
+                        sb.Append(new string(' ', level * IndentSize));
                     }
                 }
                 else
@@ -157,12 +158,12 @@ namespace Common.JSON
                     if (format == JsonFormat.Indent)
                     {
                         sb.AppendLine();
-                        sb.Append(new string(' ', level * Functions.IndentSize));
+                        sb.Append(new string(' ', level * IndentSize));
                     }
                     addComma = true;
                 }
                 sb.Append("\"");
-                sb.Append(Functions.ToJsonString(keyvalue.Key));
+                sb.Append(_ToJsonString(keyvalue.Key));
                 sb.Append("\":");
                 if (format == JsonFormat.Indent)
                 {
@@ -177,12 +178,12 @@ namespace Common.JSON
                 {
                     sb.Append((bool)obj ? "true" : "false"); // must be lowercase
                 }
-                else if (Functions.IsDecimalType(obj))
+                else if (_IsDecimalType(obj))
                 {
                     // normalize decimal places
-                    sb.Append(Functions.NormalizeDecimal(obj.ToString()));
+                    sb.Append(_NormalizeDecimal(obj.ToString()));
                 }
-                else if (Functions.IsNumericType(obj))
+                else if (_IsNumericType(obj))
                 {
                     // number with no quotes
                     sb.Append(obj.ToString());
@@ -255,7 +256,7 @@ namespace Common.JSON
                 else // string or other type which needs quotes
                 {
                     sb.Append("\"");
-                    sb.Append(Functions.ToJsonString(obj.ToString()));
+                    sb.Append(_ToJsonString(obj.ToString()));
                     sb.Append("\"");
                 }
             }
@@ -263,191 +264,10 @@ namespace Common.JSON
             if (addComma && format == JsonFormat.Indent)
             {
                 sb.AppendLine();
-                sb.Append(new string(' ', level * Functions.IndentSize));
+                sb.Append(new string(' ', level * IndentSize));
             }
             sb.Append("}");
             return sb.ToString();
-        }
-
-        public static bool TryParse(string input, ref JObject result)
-        {
-            try
-            {
-                result = Parse(input);
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        public static JObject Parse(string input)
-        {
-            JObject result = new JObject();
-            if (!string.IsNullOrEmpty(input))
-            {
-                int pos = 0;
-                _Parse(result, input, ref pos);
-            }
-            return result;
-        }
-
-        internal static void _Parse(JObject result, string input, ref int pos)
-        {
-            char c;
-            Functions.SkipWhitespace(input, ref pos);
-            if (pos >= input.Length || input[pos] != '{') // not a JObject
-            {
-                throw new SystemException($"Not a JObject, char = '{input[pos]}'");
-            }
-            pos++;
-            Functions.SkipWhitespace(input, ref pos);
-            bool readyForKey = true;
-            bool readyForColon = false;
-            bool readyForValue = false;
-            bool inValue = false;
-            bool inStringValue = false;
-            bool readyForComma = false;
-            StringBuilder key = new StringBuilder();
-            StringBuilder value = new StringBuilder();
-            while (pos < input.Length)
-            {
-                // get next char
-                c = input[pos];
-                // whitespace is always allowed at this point in the loop
-                if (char.IsWhiteSpace(c))
-                {
-                    Functions.SkipWhitespace(input, ref pos);
-                    continue;
-                }
-                if (c == '/') // ignore comments, //... or /*...*/
-                {
-                    Functions.SkipWhitespace(input, ref pos);
-                    continue;
-                }
-                pos++;
-                // handle key or string value
-                if (c == '\"') // beginning of key or string value
-                {
-                    if (readyForKey)
-                    {
-                        readyForKey = false;
-                        key.Append(Functions.GetStringValue(input, ref pos));
-                        Functions.SkipWhitespace(input, ref pos);
-                        readyForColon = true;
-                        continue;
-                    }
-                    if (readyForValue)
-                    {
-                        inValue = true;
-                        inStringValue = true;
-                        readyForValue = false;
-                        value.Append(Functions.GetStringValue(input, ref pos));
-                        _SaveKeyValue(ref result, key.ToString(), value.ToString(), inStringValue);
-                        Functions.SkipWhitespace(input, ref pos);
-                        inValue = false;
-                        inStringValue = false;
-                        readyForComma = true;
-                        key.Clear();
-                        value.Clear();
-                        continue;
-                    }
-                    throw new SystemException("Quote char when not ReadyForKey or ReadyForValue");
-                }
-                // handle other parts of the syntax
-                if (c == ':') // between key and value
-                {
-                    if (!readyForColon)
-                    {
-                        throw new SystemException("Colon char when not ReadyForColon");
-                    }
-                    Functions.SkipWhitespace(input, ref pos);
-                    readyForValue = true;
-                    readyForColon = false;
-                    continue;
-                }
-                if (c == ',') // after value, before next key
-                {
-                    if (!inValue && !readyForComma)
-                    {
-                        throw new SystemException("Comma char when not InValue or ReadyForComma");
-                    }
-                    if (inValue)
-                    {
-                        _SaveKeyValue(ref result, key.ToString(), value.ToString(), inStringValue);
-                    }
-                    Functions.SkipWhitespace(input, ref pos);
-                    inValue = false;
-                    inStringValue = false;
-                    readyForComma = false;
-                    readyForKey = true;
-                    key.Clear();
-                    value.Clear();
-                    continue;
-                }
-                if (c == '}') // end of JObject
-                {
-                    if (!readyForKey && !inValue && !readyForComma)
-                    {
-                        throw new SystemException("EndBrace char when not ReadyForKey, InValue, or ReadyForComma");
-                    }
-                    if (key.Length > 0) // ignore empty key
-                    {
-                        _SaveKeyValue(ref result, key.ToString(), value.ToString(), inStringValue);
-                    }
-                    break;
-                }
-                // handle JObjects and JArrays
-                if (c == '{') // JObject as a value
-                {
-                    if (!readyForValue)
-                    {
-                        throw new SystemException("BeginBrace char when not ReadyForValue");
-                    }
-                    pos--;
-                    JObject jo = new JObject();
-                    _Parse(jo, input, ref pos);
-                    result.Add(key.ToString(), jo);
-                    Functions.SkipWhitespace(input, ref pos);
-                    readyForComma = true;
-                    readyForValue = false;
-                    key.Clear();
-                    value.Clear();
-                    continue;
-                }
-                if (c == '[') // JArray as a value
-                {
-                    if (!readyForValue)
-                    {
-                        throw new SystemException("BeginBracket char when not ReadyForValue");
-                    }
-                    pos--;
-                    JArray ja = new JArray();
-                    JArray._Parse(ja, input, ref pos);
-                    result.Add(key.ToString(), ja);
-                    Functions.SkipWhitespace(input, ref pos);
-                    readyForComma = true;
-                    readyForValue = false;
-                    key.Clear();
-                    value.Clear();
-                    continue;
-                }
-                // not a string, JObject, JArray value
-                if (readyForValue)
-                {
-                    readyForValue = false;
-                    inValue = true;
-                    // don't continue, drop through
-                }
-                if (inValue)
-                {
-                    value.Append(c);
-                    continue;
-                }
-                // incorrect syntax!
-                throw new SystemException($"Incorrect syntax, char = '{c}'");
-            }
         }
 
         private static void _SaveKeyValue(ref JObject obj, string key, string value, bool inStringValue)
@@ -501,6 +321,21 @@ namespace Common.JSON
             {
                 throw new SystemException($"Invalid value = '{value}'");
             }
+        }
+
+        public new static JObject Parse(string value)
+        {
+            return (JObject)JBase.Parse(value);
+        }
+
+        public new static JObject Parse(TextReader value)
+        {
+            return (JObject)JBase.Parse(value);
+        }
+
+        public new static JObject Parse(CharReader value)
+        {
+            return (JObject)JBase.Parse(value);
         }
 
         public JObject Clone()

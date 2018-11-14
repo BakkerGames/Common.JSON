@@ -1,4 +1,4 @@
-﻿// CharReader.cs - 11/12/2018
+﻿// CharReader.cs - 11/14/2018
 
 using System;
 using System.Collections.Generic;
@@ -80,7 +80,7 @@ namespace Common.JSON
             }
         }
 
-        public bool EOL()
+        public bool EOF()
         {
             if (_charStack.Count > 0)
             {

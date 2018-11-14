@@ -1,9 +1,10 @@
-﻿// JArray.cs - 11/12/2018
+﻿// JArray.cs - 11/14/2018
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Text;
 
 namespace Common.JSON
@@ -100,7 +101,7 @@ namespace Common.JSON
                     if (format == JsonFormat.Indent)
                     {
                         sb.AppendLine();
-                        sb.Append(new string(' ', level * Functions.IndentSize));
+                        sb.Append(new string(' ', level * IndentSize));
                     }
                 }
                 else
@@ -108,7 +109,7 @@ namespace Common.JSON
                     if (format == JsonFormat.Indent)
                     {
                         sb.AppendLine();
-                        sb.Append(new string(' ', level * Functions.IndentSize));
+                        sb.Append(new string(' ', level * IndentSize));
                     }
                     addComma = true;
                 }
@@ -120,12 +121,12 @@ namespace Common.JSON
                 {
                     sb.Append((bool)obj ? "true" : "false"); // must be lowercase
                 }
-                else if (Functions.IsDecimalType(obj))
+                else if (_IsDecimalType(obj))
                 {
                     // normalize decimal places
-                    sb.Append(Functions.NormalizeDecimal(obj.ToString()));
+                    sb.Append(_NormalizeDecimal(obj.ToString()));
                 }
-                else if (Functions.IsNumericType(obj))
+                else if (_IsNumericType(obj))
                 {
                     // number with no quotes
                     sb.Append(obj.ToString());
@@ -198,7 +199,7 @@ namespace Common.JSON
                 else // string or other type which needs quotes
                 {
                     sb.Append("\"");
-                    sb.Append(Functions.ToJsonString(obj.ToString()));
+                    sb.Append(_ToJsonString(obj.ToString()));
                     sb.Append("\"");
                 }
             }
@@ -206,165 +207,10 @@ namespace Common.JSON
             if (addComma && format == JsonFormat.Indent)
             {
                 sb.AppendLine();
-                sb.Append(new string(' ', level * Functions.IndentSize));
+                sb.Append(new string(' ', level * IndentSize));
             }
             sb.Append("]");
             return sb.ToString();
-        }
-
-        public static bool TryParse(string input, ref JArray result)
-        {
-            try
-            {
-                result = Parse(input);
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        public static JArray Parse(string input)
-        {
-            JArray result = new JArray();
-            if (!string.IsNullOrEmpty(input))
-            {
-                int pos = 0;
-                _Parse(result, input, ref pos);
-            }
-            return result;
-        }
-
-        internal static void _Parse(JArray result, string input, ref int pos)
-        {
-            char c;
-            Functions.SkipWhitespace(input, ref pos);
-            if (pos >= input.Length || input[pos] != '[') // not a JArray
-            {
-                throw new SystemException($"Not a JArray, char = '{input[pos]}'");
-            }
-            pos++;
-            Functions.SkipWhitespace(input, ref pos);
-            bool readyForValue = true;
-            bool inValue = false;
-            bool inStringValue = false;
-            bool readyForComma = false;
-            StringBuilder value = new StringBuilder();
-            while (pos < input.Length)
-            {
-                // get next char
-                c = input[pos];
-                // whitespace is always allowed at this point in the loop
-                if (char.IsWhiteSpace(c))
-                {
-                    Functions.SkipWhitespace(input, ref pos);
-                    continue;
-                }
-                if (c == '/') // ignore comments, //... or /*...*/
-                {
-                    Functions.SkipWhitespace(input, ref pos);
-                    continue;
-                }
-                pos++;
-                // handle string value
-                if (c == '\"') // beginning of string value
-                {
-                    if (readyForValue)
-                    {
-                        inValue = true;
-                        inStringValue = true;
-                        readyForValue = false;
-                        value.Append(Functions.GetStringValue(input, ref pos));
-                        _SaveValue(ref result, value.ToString(), inStringValue);
-                        Functions.SkipWhitespace(input, ref pos);
-                        inValue = false;
-                        inStringValue = false;
-                        readyForComma = true;
-                        value.Clear();
-                        continue;
-                    }
-                    throw new SystemException("Quote char when not ReadyForValue");
-                }
-                // handle other parts of the syntax
-                if (c == ',') // after value, before next
-                {
-                    if (!inValue && !readyForComma)
-                    {
-                        throw new SystemException("Comma char when not InValue or ReadyForComma");
-                    }
-                    if (inValue)
-                    {
-                        _SaveValue(ref result, value.ToString(), inStringValue);
-                    }
-                    Functions.SkipWhitespace(input, ref pos);
-                    inValue = false;
-                    inStringValue = false;
-                    readyForComma = false;
-                    readyForValue = true;
-                    value.Clear();
-                    continue;
-                }
-                if (c == ']') // end of JArray
-                {
-                    if (!readyForValue && !inValue && !readyForComma)
-                    {
-                        throw new SystemException("EndBracket char when not ReadyForValue, InValue, or ReadyForComma");
-                    }
-                    if (value.Length > 0) // ignore empty value
-                    {
-                        _SaveValue(ref result, value.ToString(), inStringValue);
-                    }
-                    break;
-                }
-                // handle JObjects and JArrays
-                if (c == '{') // JObject as a value
-                {
-                    if (!readyForValue)
-                    {
-                        throw new SystemException("BeginBrace char when not ReadyForValue");
-                    }
-                    pos--;
-                    JObject jo = new JObject();
-                    JObject._Parse(jo, input, ref pos);
-                    result.Add(jo);
-                    Functions.SkipWhitespace(input, ref pos);
-                    readyForComma = true;
-                    readyForValue = false;
-                    value.Clear();
-                    continue;
-                }
-                if (c == '[') // JArray as a value
-                {
-                    if (!readyForValue)
-                    {
-                        throw new SystemException("BeginBracket char when not ReadyForValue");
-                    }
-                    pos--;
-                    JArray ja = new JArray();
-                    _Parse(ja, input, ref pos);
-                    result.Add(ja);
-                    Functions.SkipWhitespace(input, ref pos);
-                    readyForComma = true;
-                    readyForValue = false;
-                    value.Clear();
-                    continue;
-                }
-                // not a string, JObject, JArray value
-                if (readyForValue)
-                {
-                    readyForValue = false;
-                    inValue = true;
-                    // don't continue, drop through
-                }
-                if (inValue)
-                {
-                    value.Append(c);
-                    continue;
-                }
-                // incorrect syntax!
-                throw new SystemException($"Incorrect syntax, char = '{c}'");
-            }
         }
 
         private static void _SaveValue(ref JArray obj, string value, bool inStringValue)
@@ -418,6 +264,21 @@ namespace Common.JSON
             {
                 throw new SystemException($"Invalid value = '{value}'");
             }
+        }
+
+        public new static JArray Parse(string value)
+        {
+            return (JArray)JBase.Parse(value);
+        }
+
+        public new static JArray Parse(TextReader value)
+        {
+            return (JArray)JBase.Parse(value);
+        }
+
+        public new static JArray Parse(CharReader value)
+        {
+            return (JArray)JBase.Parse(value);
         }
 
         public JArray Clone()

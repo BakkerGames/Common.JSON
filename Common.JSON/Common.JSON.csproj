@@ -44,7 +44,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Enums.cs" />
-    <Compile Include="Functions.cs" />
     <Compile Include="JArray.cs" />
     <Compile Include="JBase.cs" />
     <Compile Include="JObject.cs" />
