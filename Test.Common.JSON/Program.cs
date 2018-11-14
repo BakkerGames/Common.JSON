@@ -7,10 +7,9 @@ namespace Test.Common.JSON
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Testing {\"Hello\",123}");
             JObject testObj = new JObject();
-            testObj.Add("Hello", 123);
-            Console.WriteLine("{\n  \"Hello\": 123\n}");
+            testObj.Add("Hello", -123.45e23);
+            Console.WriteLine("{\n  \"Hello\": -123.45e23\n}");
             Console.WriteLine(testObj.ToString(JsonFormat.Indent));
             Console.ReadLine();
         }

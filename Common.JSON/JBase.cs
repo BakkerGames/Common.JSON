@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Common.JSON
 {
-    public class JBase
+    public abstract class JBase
     {
         protected const string _dateOnlyFormat = "yyyy-MM-dd";
         protected const string _dateTimeFormat = "O";
@@ -29,14 +29,7 @@ namespace Common.JSON
         {
             _SkipWhitespace(reader);
             char startChar;
-            try
-            {
-                startChar = reader.Peek();
-            }
-            catch (Exception ex)
-            {
-                throw new ArgumentException($"Invalid JSON input\r\n{ex.Message}");
-            }
+            startChar = reader.Peek();
             if (startChar == '{')
             {
                 return _ParseJObject(reader);
@@ -67,6 +60,13 @@ namespace Common.JSON
                 while (reader.Peek() != '}')
                 {
                     _SkipWhitespace(reader);
+                    if (reader.Peek() == ',')
+                    {
+                        // allow extraneous commas
+                        reader.Read(); // gobble char
+                        _SkipWhitespace(reader);
+                        continue;
+                    }
                     if (reader.Peek() != '\"')
                     {
                         throw new SystemException("Quote char expected");
@@ -116,6 +116,13 @@ namespace Common.JSON
                 while (reader.Peek() != ']')
                 {
                     _SkipWhitespace(reader);
+                    if (reader.Peek() == ',')
+                    {
+                        // allow extraneous commas
+                        reader.Read(); // gobble char
+                        _SkipWhitespace(reader);
+                        continue;
+                    }
                     value = _GetValue(reader);
                     result.Add(value);
                     _SkipWhitespace(reader);
@@ -129,7 +136,7 @@ namespace Common.JSON
                         reader.Read(); // gobble comma char
                     }
                 }
-                reader.Read(); // gobble } char
+                reader.Read(); // gobble end bracket char
             }
             catch (Exception ex)
             {
@@ -214,21 +221,21 @@ namespace Common.JSON
                     token = _GetToken(reader);
                     if (token != "null")
                     {
-                        throw new ArgumentException("Invalid token: {token}");
+                        throw new ArgumentException($"Invalid token: {token}");
                     }
                     return null;
                 case 'f':
                     token = _GetToken(reader);
                     if (token != "false")
                     {
-                        throw new ArgumentException("Invalid token: {token}");
+                        throw new ArgumentException($"Invalid token: {token}");
                     }
                     return false;
                 case 't':
                     token = _GetToken(reader);
                     if (token != "true")
                     {
-                        throw new ArgumentException("Invalid token: {token}");
+                        throw new ArgumentException($"Invalid token: {token}");
                     }
                     return true;
                 case '\"':
@@ -237,10 +244,25 @@ namespace Common.JSON
                     return _ParseJArray(reader);
                 case '{':
                     return _ParseJObject(reader);
-                default:
+                case '-':
+                case '+':
+                case '.':
+                case 'e':
+                case 'E':
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
                     return _GetNumeric(reader);
+                default:
+                    throw new ArgumentException($"Unexpected character: {c}");
             }
-            throw new NotImplementedException();
         }
 
         private static string _GetToken(CharReader reader)
@@ -330,7 +352,7 @@ namespace Common.JSON
             string value = _GetToken(reader);
             if (value.Contains("e") || value.Contains("E"))
             {
-                return float.Parse(value);
+                return double.Parse(value);
             }
             if (value.Contains("."))
             {
@@ -426,6 +448,28 @@ namespace Common.JSON
                     if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Nullable<>))
                     {
                         return _IsNumericType(Nullable.GetUnderlyingType(t));
+                    }
+                    return false;
+            }
+            return false;
+        }
+
+        protected bool _IsFloatType(object value)
+        {
+            if (value == null)
+            {
+                return false;
+            }
+            Type t = value.GetType();
+            switch (Type.GetTypeCode(t))
+            {
+                case TypeCode.Single:
+                case TypeCode.Double:
+                    return true;
+                case TypeCode.Object:
+                    if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Nullable<>))
+                    {
+                        return _IsFloatType(Nullable.GetUnderlyingType(t));
                     }
                     return false;
             }

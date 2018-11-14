@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace UnitTest.Common.JSON
 {
     [TestClass]
-    public class UnitTest1
+    public class UnitTestToString
     {
         [TestMethod]
         public void TestNewJArray()
@@ -43,6 +43,95 @@ namespace UnitTest.Common.JSON
         }
 
         [TestMethod]
+        public void TestNewJArrayToStringOneItemNull()
+        {
+            JArray testObj = new JArray();
+            testObj.Add(null);
+            Assert.AreEqual(testObj.ToString(JsonFormat.None), "[null]");
+        }
+
+        [TestMethod]
+        public void TestNewJArrayToStringOneItemFalse()
+        {
+            JArray testObj = new JArray();
+            testObj.Add(false);
+            Assert.AreEqual(testObj.ToString(JsonFormat.None), "[false]");
+        }
+
+        [TestMethod]
+        public void TestNewJArrayToStringOneItemTrue()
+        {
+            JArray testObj = new JArray();
+            testObj.Add(true);
+            Assert.AreEqual(testObj.ToString(JsonFormat.None), "[true]");
+        }
+
+        [TestMethod]
+        public void TestNewJArrayToStringOneItemNumNeg()
+        {
+            JArray testObj = new JArray();
+            testObj.Add(-123);
+            Assert.AreEqual(testObj.ToString(JsonFormat.None), "[-123]");
+        }
+
+        [TestMethod]
+        public void TestNewJArrayToStringOneItemNumZero()
+        {
+            JArray testObj = new JArray();
+            testObj.Add(0);
+            Assert.AreEqual(testObj.ToString(JsonFormat.None), "[0]");
+        }
+
+        [TestMethod]
+        public void TestNewJArrayToStringOneItemNumDec()
+        {
+            JArray testObj = new JArray();
+            testObj.Add(-123.45);
+            Assert.AreEqual(testObj.ToString(JsonFormat.None), "[-123.45]");
+        }
+
+        [TestMethod]
+        public void TestNewJArrayToStringOneItemNumFloat()
+        {
+            JArray testObj = new JArray();
+            testObj.Add(-123.45e23);
+            Assert.AreEqual(testObj.ToString(JsonFormat.None), "[-1.2345E+25]");
+        }
+
+        [TestMethod]
+        public void TestNewJArrayToStringOneItemNumFloatZero()
+        {
+            JArray testObj = new JArray();
+            testObj.Add(0e23);
+            Assert.AreEqual(testObj.ToString(JsonFormat.None), "[0]");
+        }
+
+        [TestMethod]
+        public void TestNewJArrayToStringOneItemNumDecZero()
+        {
+            JArray testObj = new JArray();
+            testObj.Add(0.0);
+            Assert.AreEqual(testObj.ToString(JsonFormat.None), "[0]");
+        }
+
+        [TestMethod]
+        public void TestNewJArrayToStringOneItemNumDecZeroExtra()
+        {
+            JArray testObj = new JArray();
+            testObj.Add(-000123.45000);
+            Assert.AreEqual(testObj.ToString(JsonFormat.None), "[-123.45]");
+        }
+
+        [TestMethod]
+        public void TestNewJArrayToStringTwoItemNum()
+        {
+            JArray testObj = new JArray();
+            testObj.Add(123);
+            testObj.Add(999);
+            Assert.AreEqual(testObj.ToString(JsonFormat.None), "[123,999]");
+        }
+
+        [TestMethod]
         public void TestNewJObject()
         {
             JObject testObj = new JObject();
@@ -68,6 +157,13 @@ namespace UnitTest.Common.JSON
         {
             JObject testObj = new JObject();
             Assert.AreEqual(testObj.ToString(JsonFormat.Indent), "{}");
+        }
+
+        [TestMethod]
+        public void TestNewJObjectToStringTabs()
+        {
+            JObject testObj = new JObject();
+            Assert.AreEqual(testObj.ToString(JsonFormat.Tabs), "{}");
         }
 
         [TestMethod]

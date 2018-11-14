@@ -131,6 +131,11 @@ namespace Common.JSON
                 {
                     sb.Append((bool)obj ? "true" : "false"); // must be lowercase
                 }
+                else if (_IsFloatType(obj))
+                {
+                    // don't try to normalize
+                    sb.Append(obj.ToString());
+                }
                 else if (_IsDecimalType(obj))
                 {
                     // normalize decimal places
