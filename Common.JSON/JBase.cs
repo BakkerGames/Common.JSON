@@ -1,4 +1,4 @@
-﻿// JBase.cs - 11/14/2018
+﻿// JBase.cs - 04/01/2019
 
 using System;
 using System.Globalization;
@@ -57,6 +57,7 @@ namespace Common.JSON
                 }
                 string key;
                 object value;
+                _SkipWhitespace(reader);
                 while (reader.Peek() != '}')
                 {
                     _SkipWhitespace(reader);
@@ -89,6 +90,7 @@ namespace Common.JSON
                     if (c == ',')
                     {
                         reader.Read(); // gobble comma char
+                        _SkipWhitespace(reader);
                     }
                 }
                 reader.Read(); // gobble } char
@@ -113,6 +115,7 @@ namespace Common.JSON
                     throw new SystemException("Begining bracket expected");
                 }
                 object value;
+                _SkipWhitespace(reader);
                 while (reader.Peek() != ']')
                 {
                     _SkipWhitespace(reader);
@@ -134,6 +137,7 @@ namespace Common.JSON
                     if (c == ',')
                     {
                         reader.Read(); // gobble comma char
+                        _SkipWhitespace(reader);
                     }
                 }
                 reader.Read(); // gobble end bracket char
@@ -536,7 +540,5 @@ namespace Common.JSON
             }
             return result;
         }
-
-
     }
 }
