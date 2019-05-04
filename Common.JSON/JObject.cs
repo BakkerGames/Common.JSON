@@ -1,4 +1,4 @@
-﻿// JObject.cs - 05/02/2019
+﻿// JObject.cs - 05/03/2019
 
 using System;
 using System.Collections;
@@ -295,59 +295,6 @@ namespace Common.JSON
             sb.Append("}");
             return sb.ToString();
         }
-
-        //private static void _SaveKeyValue(ref JObject obj, string key, string value, bool inStringValue)
-        //{
-        //    if (!inStringValue)
-        //    {
-        //        value = value.TrimEnd(); // helps with parsing
-        //    }
-        //    if (inStringValue)
-        //    {
-        //        // see if the string is a datetime format
-        //        if (DateTime.TryParse(value, CultureInfo.InvariantCulture,
-        //                              DateTimeStyles.RoundtripKind, out DateTime datetimeValue))
-        //        {
-        //            obj.Add(key, datetimeValue);
-        //        }
-        //        else
-        //        {
-        //            obj.Add(key, value);
-        //        }
-        //    }
-        //    else if (value == "null")
-        //    {
-        //        obj.Add(key, null);
-        //    }
-        //    else if (value == "true")
-        //    {
-        //        obj.Add(key, true);
-        //    }
-        //    else if (value == "false")
-        //    {
-        //        obj.Add(key, false);
-        //    }
-        //    else if (int.TryParse(value, out int intValue))
-        //    {
-        //        obj.Add(key, intValue); // default to int for anything smaller
-        //    }
-        //    else if (long.TryParse(value, out long longValue))
-        //    {
-        //        obj.Add(key, longValue);
-        //    }
-        //    else if (decimal.TryParse(value, out decimal decimalValue))
-        //    {
-        //        obj.Add(key, decimalValue);
-        //    }
-        //    else if (double.TryParse(value, out double doubleValue))
-        //    {
-        //        obj.Add(key, doubleValue);
-        //    }
-        //    else // unknown or non-numeric value
-        //    {
-        //        throw new SystemException($"Invalid value = '{value}'");
-        //    }
-        //}
 
         public new static JObject Parse(string value)
         {
